@@ -35,7 +35,12 @@ func init() {
 	}
 
 	debug := flag.Bool("debug", false, "Print debugging information")
-	flag.BoolVar(&dry_run, "dry-run", false, "Only list what would happen, don't actually do it")
+	flag.BoolVar(
+		&dry_run,
+		"dry-run",
+		false,
+		"Only list what would happen, don't actually do it",
+	)
 	flag.Parse()
 
 	if *debug {
@@ -166,8 +171,8 @@ func getFirstFreeNameFor(filename string, blocklist map[string]string) (string, 
 		return filename, nil
 	}
 
-    basename := filepath.Base(filename)
-    suffix := filepath.Ext(filename)
+	basename := filepath.Base(filename)
+	suffix := filepath.Ext(filename)
 
 	for i := 1; i < 64; i++ {
 		newname := fmt.Sprintf("%v_%v%v", basename, i, suffix)
