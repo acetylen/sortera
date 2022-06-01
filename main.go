@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/md5"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -12,6 +14,7 @@ import (
 
 var this os.FileInfo
 var dry_run bool
+var delete_duplicates bool
 var swmonths = [12]string{
 	"Januari",
 	"Februari",
@@ -40,6 +43,12 @@ func init() {
 		"dry-run",
 		false,
 		"Only list what would happen, don't actually do it",
+	)
+	flag.BoolVar(
+		&delete_duplicates,
+		"delete-duplicates",
+		false,
+		"Find and delete all duplicate files (except the first one found",
 	)
 	flag.Parse()
 
@@ -194,6 +203,46 @@ func getFirstFreeNameFor(filename string, blocklist map[string]string) (string, 
 	return "", errors.New("Failed to make a new filename")
 }
 
+func getDuplicateFiles(f fs.FS, dupes map[string]string) error {
+	/* give a list of filenames that are duplicates of a (lexicographically earlier)
+	   existing file */
+
+	seen := make(map[string]string, 65535)
+	hash := md5.New()
+
+	return fs.WalkDir(f, ".", func(path string, info fs.DirEntry, err error) error {
+
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		hash.Reset()
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if _, err := io.Copy(hash, file); err != nil {
+			return err
+		}
+
+		sum := string(hash.Sum(nil))
+
+		if original, exists := seen[sum]; exists {
+			dupes[path] = original
+		} else {
+			seen[sum] = path
+		}
+
+		return nil
+	})
+
+}
+
 func main() {
 	root, err := os.Getwd()
 	if err != nil {
@@ -203,6 +252,26 @@ func main() {
 	log.Println("Starting in", root)
 
 	fs := os.DirFS(root)
+
+	if delete_duplicates {
+		dupes := make(map[string]string, 65535)
+		log.Println("Finding duplicates...")
+		err = getDuplicateFiles(fs, dupes)
+		if err != nil {
+			log.Fatalln("Failed to find duplicates:", err)
+		}
+		log.Printf("Found %v duplicates\n", len(dupes))
+		for dupe, original := range dupes {
+
+			log.Printf("%v == %v; rm %v\n", dupe, original, dupe)
+			if !dry_run {
+				err = os.Remove(dupe)
+				if err != nil {
+					log.Fatalln("Failed to remove file:", err)
+				}
+			}
+		}
+	}
 
 	badfiles := make(map[string]string, 65535)
 
