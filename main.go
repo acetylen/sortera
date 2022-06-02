@@ -16,6 +16,10 @@ import (
 var this os.FileInfo
 var dry_run bool
 var delete_duplicates bool
+
+var BLOCKLIST = [...]string{
+	"thumbs.db",
+	"desktop.ini",
 }
 
 func init() {
@@ -64,6 +68,12 @@ func getAllFilesToMove(f fs.FS, out map[string]string) error {
 
 		if info.IsDir() {
 			return nil
+		}
+
+		for _, blockedname := range BLOCKLIST {
+			if filepath.Base(path) == blockedname {
+				return nil
+			}
 		}
 
 		fileinfo, err := info.Info()
