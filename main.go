@@ -158,8 +158,8 @@ func getFirstFreeNameFor(filename string, blocklist map[string]string) (string, 
 		return filename, nil
 	}
 
-	basename := filepath.Base(filename)
 	suffix := filepath.Ext(filename)
+	basename := filename[:len(filename)-len(suffix)]
 
 	for i := 1; i < 64; i++ {
 		newname := fmt.Sprintf("%v_%v%v", basename, i, suffix)
