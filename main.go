@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/acetylen/sortera/dateutil"
 	"io"
 	"io/fs"
 	"log"
@@ -15,19 +16,6 @@ import (
 var this os.FileInfo
 var dry_run bool
 var delete_duplicates bool
-var swmonths = [12]string{
-	"Januari",
-	"Februari",
-	"Mars",
-	"April",
-	"Maj",
-	"Juni",
-	"Juli",
-	"Augusti",
-	"September",
-	"Oktober",
-	"November",
-	"December",
 }
 
 func init() {
@@ -86,7 +74,7 @@ func getAllFilesToMove(f fs.FS, out map[string]string) error {
 		if os.SameFile(fileinfo, this) {
 			return nil
 		}
-		destpath, err := getPathByDate(fileinfo)
+		destpath, err := dateutil.GetPathByDate(fileinfo)
 		if err != nil {
 			log.Println("Failed to get date path:", err)
 			return err
@@ -149,26 +137,6 @@ func getAllEmptyDirs(f fs.FS) ([]string, error) {
 	}
 
 	return empty, nil
-}
-
-func getPathByDate(fileinfo fs.FileInfo) (out string, err error) {
-	/* given info about a file, return the directory where the file
-	   should reside */
-
-	/*
-	   if windows
-	   sysinfo := fileinfo.Sys()
-
-	   win := sysinfo.(*syscall.Win32FileAttributeData)
-	   t := time.Unix(win.CreationTime.Nanoseconds())
-	*/
-	t := fileinfo.ModTime()
-
-	yearstr := fmt.Sprintf("%v", t.Year())
-	monthname := swmonths[t.Month()-1]
-	out = filepath.Join(".", yearstr, monthname, fileinfo.Name())
-	out = filepath.ToSlash(out)
-	return
 }
 
 func getFirstFreeNameFor(filename string, blocklist map[string]string) (string, error) {
