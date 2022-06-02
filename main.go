@@ -263,7 +263,7 @@ func main() {
 		log.Printf("Found %v duplicates\n", len(dupes))
 		for dupe, original := range dupes {
 
-			log.Printf("%v == %v; rm %v\n", dupe, original, dupe)
+			log.Printf("remove %v (identical to %v)\n", dupe, original)
 			if !dry_run {
 				err = os.Remove(dupe)
 				if err != nil {
@@ -297,7 +297,7 @@ func main() {
 		if err != nil {
 			log.Fatalln("Failed to create new filename:", err)
 		}
-		log.Printf("%v -> %v\n", src, uniqdst)
+		log.Printf("move %v to %v\n", src, uniqdst)
 		if !dry_run {
 			err = os.Rename(src, uniqdst)
 			if err != nil {
@@ -313,7 +313,7 @@ func main() {
 	}
 	log.Printf("Found %v empty directories\n", len(emptydirs))
 	for _, d := range emptydirs {
-		log.Println("rm", d)
+		log.Printf("remove %v (empty)\n", d)
 		if !dry_run {
 			err = os.Remove(d)
 			if err != nil {
